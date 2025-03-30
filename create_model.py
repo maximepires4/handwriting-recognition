@@ -37,7 +37,7 @@ network = [
 
 model = Model(network, MSE())
 
-model.train(input, output, epochs=2, learning_rate=0.1, batch_size=10)
+model.train(input, output, epochs=20, learning_rate=0.1, batch_size=10)
 
 Path("output/").mkdir(parents=True, exist_ok=True)
 
