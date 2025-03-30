@@ -1,8 +1,6 @@
-# FFNN + Handwriting recognition
+# Handwriting recognition
 
-Custom library for implementing feedforward neural networks using back propagation.
-This library is then used for handwriting recognition with a gui (MNIST database).
-I recreated the algorithm from scratch, without using any external library, to fully understand the process.
+Handwriting recognition model implemented with my library [MPNeuralNetwork](https://github.com/maximepires4/mp-neural-network) with a gui (MNIST database).
 
 ## Usage
 
@@ -14,7 +12,7 @@ Create, train and save a model inside `output/model.pkl`.
 python3 create_model.py
 ```
 
-To modify the model, edit the variable `netword` inside `create_model.py`
+To modify the model, edit the variable `network` inside `create_model.py`
 
 ### Test the model
 
