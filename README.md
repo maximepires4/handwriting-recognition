@@ -11,9 +11,9 @@ Its "brain" is built using MPNeuralNetwork, my custom neural network library bui
 
 This model was trained on the 50,000-image MNIST training set and evaluated on the 10,000-image test set.
 
-* **Final Test Accuracy:** **69.3%**
+* **Final Test Accuracy:** **81.3%**
 * **Model Architecture:** `784 -> 128 (Tanh) -> 40 (Tanh) -> 10 (Softmax)`
-* **Loss Function:** **MSE**
+* **Loss Function:** **Cross-Entropy**
 * **Core Library:** The model is built entirely using my custom library, [MPNeuralNetwork](https://github.com/maximepires4/mp-neural-network).
 
 ## Image processing
