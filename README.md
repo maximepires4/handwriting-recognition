@@ -1,6 +1,18 @@
 # Handwriting recognition
 
+![Example](images/example.gif)
+
 Handwriting recognition model implemented with my library [MPNeuralNetwork](https://github.com/maximepires4/mp-neural-network) with a gui (MNIST database).
+
+## Image processing
+
+Inspired by the [MNIST database wikipedia page](https://en.wikipedia.org/wiki/MNIST_database#MNIST), the drawn digit is cleaned to look like the dataset images.
+
+The image is processed in several steps:
+1.  The image is cropped to the bounding box of the digit.
+2.  It is resized to fit within a 20x20 pixel box, while maintaining its aspect ratio.
+3.  The center of mass of the digit is computed.
+4.  The resized image is pasted onto a 28x28 black canvas, aligning the center of mass with the center of the canvas.
 
 ## Usage
 
