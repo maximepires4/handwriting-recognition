@@ -51,6 +51,11 @@ class Paint(object):
         )
         self.c.grid(row=1, rowspan=10, columnspan=5)
 
+        # Create a fixed-size frame for the prediction labels
+        prediction_frame = Frame(self.root, width=250, height=600)
+        prediction_frame.grid(row=1, column=5, rowspan=10, columnspan=2, padx=10)
+        prediction_frame.grid_propagate(False)
+
         self.labels = []
         self.textvars = []
 
@@ -58,25 +63,26 @@ class Paint(object):
             self.textvars.append([StringVar(), StringVar()])
             self.labels.append((
                 Label(
-                    self.root,
+                    prediction_frame,
                     font=("TkDefaultFont", 30),
                     fg="#888" if i != 0 else "#000",
                     textvariable=self.textvars[i][0],
                 ),
                 Label(
-                    self.root,
+                    prediction_frame,
                     font=("TkDefaultFont", 30),
                     fg="#888" if i != 0 else "#000",
                     textvariable=self.textvars[i][1],
                 ),
             ))
-            self.labels[i][0].grid(row=1 + i, column=6, padx=30)
-            self.labels[i][1].grid(row=1 + i, column=7, padx=20)
+            self.labels[i][0].grid(row=i, column=0, padx=10)
+            self.labels[i][1].grid(row=i, column=1, padx=10)
 
         # self.textvar = StringVar()
         # self.guess = Label(self.root, textvariable=self.textvar, font=("TkDefaultFont", 44))
         # self.guess.grid(row=2, columnspan=5)
-
+        
+        self._throttle_flag = False
         self.setup()
         self.root.mainloop()
 
@@ -90,8 +96,12 @@ class Paint(object):
         self.c.bind("<B1-Motion>", self.paint)
         self.c.bind("<ButtonRelease-1>", self.reset)
 
+        # Ensure canvas is fully rendered to get correct size for PIL image
+        self.root.update_idletasks()
+
         self.image_handler = ImageHandler(self.root, self.c)
         self.neuralnet_handler = NeuralNetHandler()
+        self._clear_prediction_labels()
 
     def use_pen(self):
         self.activate_button(self.pen_button)
@@ -104,6 +114,8 @@ class Paint(object):
 
     def erase_all(self):
         self.c.delete("all")
+        self.image_handler.clear()
+        self._clear_prediction_labels()
 
     def activate_button(self, some_button, eraser_mode=False):
         self.active_button.config(relief=RAISED)
@@ -113,32 +125,60 @@ class Paint(object):
 
     def paint(self, event):
         self.line_width = self.choose_size_button.get()
-        paint_color = self.DEFAULT_BACKGROUND if self.eraser_on else self.color
+        # Use white for drawing on PIL image, black for erasing
+        paint_color = "black" if self.eraser_on else "white"
+        
         if self.old_x and self.old_y:
+            # Draw on the screen canvas
             self.c.create_line(
                 self.old_x,
                 self.old_y,
                 event.x,
                 event.y,
                 width=self.line_width,
-                fill=paint_color,
+                fill=self.DEFAULT_BACKGROUND if self.eraser_on else self.DEFAULT_COLOR,
                 capstyle=ROUND,
                 smooth=TRUE,
                 splinesteps=36,
             )
+            # Draw on the in-memory PIL image
+            self.image_handler.add_line(self.old_x, self.old_y, event.x, event.y, self.line_width, paint_color)
+
         self.old_x = event.x
         self.old_y = event.y
 
+        # Throttle the prediction
+        if not self._throttle_flag:
+            self._throttle_flag = True
+            self._trigger_prediction()
+            self.root.after(100, self._release_throttle)
+
+    def _release_throttle(self):
+        self._throttle_flag = False
+
+    def _trigger_prediction(self):
         self.image_handler.update()
         prediction = self.neuralnet_handler.predict(self.image_handler.image)
 
         prediction_textvars = [[i, p[0]] for i, p in zip(range(10), prediction)]
 
         count = 0
+        # Sort by probability and update labels
         for item in reversed(sorted(prediction_textvars, key=lambda item: item[1])):
             self.textvars[count][0].set(item[0])
             self.textvars[count][1].set("{:,.2%}".format(item[1]))
+            # Dim non-top predictions
+            color = "#000" if count == 0 else "#888"
+            self.labels[count][0].config(fg=color)
+            self.labels[count][1].config(fg=color)
             count += 1
+
+    def _clear_prediction_labels(self):
+        for i in range(10):
+            self.textvars[i][0].set("")
+            self.textvars[i][1].set("")
 
     def reset(self, event):
         self.old_x, self.old_y = None, None
+        # Trigger one final prediction on mouse release
+        self._trigger_prediction()
