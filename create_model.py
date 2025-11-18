@@ -1,3 +1,5 @@
+import random
+
 import gzip, pickle
 import numpy as np
 
@@ -5,7 +7,7 @@ import dill as pickle
 from pathlib import Path
 
 from mpneuralnetwork.activations import Tanh, Sigmoid, Softmax, ReLU, PReLU, Swish
-from mpneuralnetwork.losses import MSE, CrossEntropy
+from mpneuralnetwork.losses import MSE, CategoricalCrossEntropy
 from mpneuralnetwork.layers import Dense
 from mpneuralnetwork.model import Model
 
@@ -14,7 +16,11 @@ def load_data():
         f.seek(0)
         training_data, validation_data, test_data = pickle.load(f, encoding='latin1')
         return (training_data, validation_data, test_data)
-    
+
+seed = 69
+np.random.seed(seed)
+random.seed(seed)
+
 training_data, validation_data, test_data = load_data()
 
 input = training_data[0]
@@ -31,13 +37,12 @@ network = [
     Tanh(),
     Dense(128, 40),
     Tanh(),
-    Dense(40, 10),
-    Softmax()
+    Dense(40, 10)
 ]
 
-model = Model(network, CrossEntropy())
+model = Model(network, CategoricalCrossEntropy())
 
-model.train(input, output, epochs=20, learning_rate=0.1, batch_size=10)
+model.train(input, output, epochs=10, learning_rate=0.1, batch_size=10)
 
 Path("output/").mkdir(parents=True, exist_ok=True)
 
