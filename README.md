@@ -1,61 +1,73 @@
-# Handwriting recognition
+# Real-Time Handwriting Recognition 
+A GUI application that recognizes handwritten digits in real-time.
 
-![Example](images/example.gif)
+**This project serves as a proof-of-concept for [MPNeuralNetwork](https://github.com/maximepires4/mp-neural-network/), my custom Deep Learning library built from scratch.**
+
+<center><img src="images/example.gif" width="75%" height="75%"></center>
 
 ## Overview
-This project is a GUI application that recognizes handwritten digits.
+The goal of this project is to demonstrate that a neural network built without frameworks (like TensorFlow or PyTorch) can perform efficiently in a production-like environment.
 
-Its "brain" is built using MPNeuralNetwork, my custom neural network library built from scratch in Python.
+The application features a drawing canvas where the user inputs a digit.
+The app processes the image on the fly and feeds it to a neural network trained on the MNIST dataset.
 
-## Performance & Model Architecture
+## Model & Architecture
+The "brain" of this application is a Feed-Forward Neural Network built with `mp-neural-network`.
 
-This model was trained on the 50,000-image MNIST training set and evaluated on the 10,000-image test set.
+- **Architecture:** `Input(784) -> Dense(128) -> Tanh -> Dense(40) -> Tanh -> Dense(10) -> Softmax`
+- **Loss Function:** Categorical Cross-Entropy
+- **Optimizer:** SGD
+- **Accuracy:** 93% on the MNIST test set (10,000 images)
 
-* **Final Test Accuracy:** **90.4%**
-* **Model Architecture:** `784 -> 128 (Tanh) -> 40 (Tanh) -> 10 (Softmax)`
-* **Loss Function:** **Cross-Entropy**
-* **Core Library:** The model is built entirely using my custom library, [MPNeuralNetwork](https://github.com/maximepires4/mp-neural-network).
+## Image Processing Pipeline
 
-## Image processing
+To ensure the model works on user drawings, the input must match the MNIST dataset format strictly.
+The `ImageHandler` class performs the following steps (identical to MNIST preprocessing):
 
-Inspired by the [MNIST database wikipedia page](https://en.wikipedia.org/wiki/MNIST_database#MNIST), the drawn digit is cleaned to look like the dataset images.
+1. **Bounding Box Crop:** Isolate the digit from the empty canvas space.
+2. **Resize:** Scale the digit down to fit in a 20x20 pixel box while preserving the aspect ratio.
+3. **Center of Mass:** Compute the center of mass of the pixels.
+4. **Padding:** Place the 20x20 image onto a 28x28 black canvas, positioning it based on the center of mass.
 
-The image is processed in several steps:
-1.  The image is cropped to the bounding box of the digit.
-2.  It is resized to fit within a 20x20 pixel box, while maintaining its aspect ratio.
-3.  The center of mass of the digit is computed.
-4.  The resized image is pasted onto a 28x28 black canvas, aligning the center of mass with the center of the canvas.
+This pipeline makes the recognition robust to drawing size and position.
 
-## Usage
+## Installation
 
-### Create a model
+### 1. Prerequisites
 
-Create, train and save a model inside `output/model.pkl`.
+You need to install the custom library and the GUI dependencies.
 
-```bash
-python3 create_model.py
+```
+pip install -r requirements.txt
 ```
 
-To modify the model, edit the variable `network` inside `create_model.py`
+*Note for Linux users: You might need to install Tkinter manually:* `sudo apt install python3-tk`
 
-### Test the model
+### 2. Train a model
 
-Launch a gui for manually testing the model
+```
+python create_model.py
+```
 
-```bash
+### 3. Run the application
+
+```
 python3 main.py
 ```
 
-### Evaluate the model
+## Project Structure
+- `main.py`: Entry point of the application.
+- `create_model.py`: Script to train the model using `mpneuralnetwork` and save it using `dill` under `output/`.
+- `evaluate.py`: Script to calculate accuracy on the test set.
+- `src/`: Contains the logic for the GUI (`paint.py`), image processing (`imagehandler.py`), and model inference (`neuralnethandler.py`).
 
-```bash
-python3 evaluate.py
-```
+## Usage
 
-## Requirements
-
-* tkinter : `sudo apt install python3-tk`
+- **Draw:** Use your mouse to draw a digit (0-9) on the canvas.
+- **Real-time Prediction:** The bar chart on the right updates automatically as you draw (throttled for performance).
+- **Correction:** Use the "Eraser" or "Erase all" buttons to correct mistakes.
+- **Export:** You can view the result of the image processing pipeline on your drawing using the "Export image" button (saved under `output/`).
 
 ## Credits
 
-User [nikhilkumarsingh](https://github.com/nikhilkumarsingh) for the gui [base code](https://gist.github.com/nikhilkumarsingh/85501ee2c3d8c0cfa9d1a27be5781f06).
+- GUI layout inspired by [nikhilkumarsingh](https://gist.github.com/nikhilkumarsingh/85501ee2c3d8c0cfa9d1a27be5781f06).

@@ -160,7 +160,7 @@ class Paint(object):
         self.image_handler.update()
         prediction = self.neuralnet_handler.predict(self.image_handler.image)
 
-        prediction_textvars = [[i, p[0]] for i, p in zip(range(10), prediction)]
+        prediction_textvars = [[i, p] for i, p in zip(range(10), prediction[0])]
 
         count = 0
         # Sort by probability and update labels

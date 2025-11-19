@@ -21,8 +21,6 @@ _, _, test_data = load_data()
 test_inputs = test_data[0]
 test_labels = test_data[1]
 
-test_inputs = [inp.reshape(784, 1) for inp in test_inputs]
-
 with open('output/model.pkl', 'rb') as f:
     model = pickle.load(f)
 

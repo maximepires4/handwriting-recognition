@@ -10,5 +10,5 @@ class NeuralNetHandler():
             self.model = pickle.load(f)
     
     def predict(self, image):
-        img = np.array(image).reshape((784,1))
+        img = np.array(image).reshape(784)
         return self.model.predict(img)

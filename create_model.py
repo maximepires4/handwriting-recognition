@@ -7,7 +7,7 @@ import dill as pickle
 from pathlib import Path
 
 from mpneuralnetwork.activations import Tanh, Sigmoid, Softmax, ReLU, PReLU, Swish
-from mpneuralnetwork.losses import MSE, CategoricalCrossEntropy
+from mpneuralnetwork.losses import CategoricalCrossEntropy
 from mpneuralnetwork.layers import Dense
 from mpneuralnetwork.model import Model
 
@@ -29,9 +29,6 @@ output = np.zeros((training_data[1].shape[0], 10))
 for i in range(training_data[1].shape[0]):
     output[i, training_data[1][i]] = 1
 
-input = input.reshape((50000, 784, 1))
-output = output.reshape((50000, 10, 1))
-
 network = [
     Dense(784, 128),
     Tanh(),
@@ -42,7 +39,7 @@ network = [
 
 model = Model(network, CategoricalCrossEntropy())
 
-model.train(input, output, epochs=10, learning_rate=0.1, batch_size=10)
+model.train(input, output, epochs=10, batch_size=10)
 
 Path("output/").mkdir(parents=True, exist_ok=True)
 
