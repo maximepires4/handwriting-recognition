@@ -1,4 +1,5 @@
-# Real-Time Handwriting Recognition 
+# Real-Time Handwriting Recognition
+
 A GUI application that recognizes handwritten digits in real-time.
 
 **This project serves as a proof-of-concept for [MPNeuralNetwork](https://github.com/maximepires4/mp-neural-network/), my custom Deep Learning library built from scratch.**
@@ -6,18 +7,35 @@ A GUI application that recognizes handwritten digits in real-time.
 <center><img src="images/example.gif" width="75%" height="75%"></center>
 
 ## Overview
+
 The goal of this project is to demonstrate that a neural network built without frameworks (like TensorFlow or PyTorch) can perform efficiently in a production-like environment.
 
 The application features a drawing canvas where the user inputs a digit.
 The app processes the image on the fly and feeds it to a neural network trained on the MNIST dataset.
 
 ## Model & Architecture
-The "brain" of this application is a Feed-Forward Neural Network built with `mp-neural-network`.
 
-- **Architecture:** `Input(784) -> Dense(128) -> Tanh -> Dense(40) -> Tanh -> Dense(10) -> Softmax`
+The "brain" of this application is a Neural Network built with `mp-neural-network`. Three architectures are available in the `train/` directory:
+
+### 1. Super CNN (High Performance) - `train/super_cnn.py`
+
+A deeper Convolutional Neural Network designed for higher accuracy.
+
+- **Architecture:** `Conv2D(32) -> BN -> ReLU -> MaxPool -> Conv2D(64) -> BN -> ReLU -> MaxPool -> Flatten -> Dense(128) -> BN -> ReLU -> Dropout(0.5) -> Dense(10)`
 - **Loss Function:** Categorical Cross-Entropy
-- **Optimizer:** SGD
-- **Accuracy:** 93% on the MNIST test set (10,000 images)
+- **Optimizer:** Adam
+
+### 2. CNN (Standard) - `train/cnn_mnist.py`
+
+A standard Convolutional Neural Network.
+
+- **Architecture:** `Conv2D(32) -> ReLU -> MaxPool -> Flatten -> Dense(128) -> BN -> ReLU -> Dense(10)`
+
+### 3. Dense (Feed-Forward) - `train/mnist.py`
+
+A classic Multi-Layer Perceptron.
+
+- **Architecture:** `Dense(800) -> BN -> ReLU -> Dropout(0.2) -> Dense(800) -> BN -> ReLU -> Dropout(0.3) -> Dense(10)`
 
 ## Image Processing Pipeline
 
@@ -35,9 +53,9 @@ This pipeline makes the recognition robust to drawing size and position.
 
 ### 1. Prerequisites
 
-You need to install the custom library and the GUI dependencies.
+Install the dependencies:
 
-```
+```bash
 pip install -r requirements.txt
 ```
 
@@ -45,28 +63,42 @@ pip install -r requirements.txt
 
 ### 2. Train a model
 
-```
-python create_model.py
-```
+You can train any of the available models by executing a script under `train/`
 
-### 3. Run the application
-
-```
-python3 main.py
-```
-
-## Project Structure
-- `main.py`: Entry point of the application.
-- `create_model.py`: Script to train the model using `mpneuralnetwork` and save it using `dill` under `output/`.
-- `evaluate.py`: Script to calculate accuracy on the test set.
-- `src/`: Contains the logic for the GUI (`paint.py`), image processing (`imagehandler.py`), and model inference (`neuralnethandler.py`).
+The application is now run via `run_gui.py`.
 
 ## Usage
 
+### Basic Syntax
+
+```bash
+python3 run_gui.py [-m <path_to_model>]
+```
+
+- `-m`, `--model_path`: Path to the `.npz` file generated during training. Defaults to `output/dense_mnist.npz`.
+
+*Note: The application automatically detects the model architecture (CNN or Dense) and adjusts the input shape accordingly.*
+
+### Example
+
+**Running with default (Dense model):**
+
+```bash
+python3 run_gui.py
+```
+
+**Running with the Super CNN:**
+
+```bash
+python3 run_gui.py -m output/super_cnn_mnist.npz
+```
+
+### GUI
+
 - **Draw:** Use your mouse to draw a digit (0-9) on the canvas.
-- **Real-time Prediction:** The bar chart on the right updates automatically as you draw (throttled for performance).
+- **Real-time Prediction:** The bar chart on the right updates automatically as you draw.
 - **Correction:** Use the "Eraser" or "Erase all" buttons to correct mistakes.
-- **Export:** You can view the result of the image processing pipeline on your drawing using the "Export image" button (saved under `output/`).
+- **Export:** You can save the processed image (what the network sees) using the "Export image" button (saved under `output/`).
 
 ## Credits
 

@@ -2,10 +2,9 @@
 # https://gist.github.com/nikhilkumarsingh/85501ee2c3d8c0cfa9d1a27be5781f06
 
 from tkinter import *
-from tkinter.colorchooser import askcolor
 
-from src.imagehandler import ImageHandler
-from src.neuralnethandler import NeuralNetHandler
+from gui.imagehandler import ImageHandler
+from gui.neuralnethandler import NeuralNetHandler
 
 
 class Paint(object):
@@ -13,7 +12,8 @@ class Paint(object):
     DEFAULT_COLOR = "white"
     DEFAULT_BACKGROUND = "black"
 
-    def __init__(self):
+    def __init__(self, model_path):
+        self.model_path = model_path
         self.root = Tk()
         self.root.title("Handwriting recognition")
 
@@ -61,27 +61,25 @@ class Paint(object):
 
         for i in range(10):
             self.textvars.append([StringVar(), StringVar()])
-            self.labels.append((
-                Label(
-                    prediction_frame,
-                    font=("TkDefaultFont", 30),
-                    fg="#888" if i != 0 else "#000",
-                    textvariable=self.textvars[i][0],
-                ),
-                Label(
-                    prediction_frame,
-                    font=("TkDefaultFont", 30),
-                    fg="#888" if i != 0 else "#000",
-                    textvariable=self.textvars[i][1],
-                ),
-            ))
+            self.labels.append(
+                (
+                    Label(
+                        prediction_frame,
+                        font=("TkDefaultFont", 30),
+                        fg="#888" if i != 0 else "#000",
+                        textvariable=self.textvars[i][0],
+                    ),
+                    Label(
+                        prediction_frame,
+                        font=("TkDefaultFont", 30),
+                        fg="#888" if i != 0 else "#000",
+                        textvariable=self.textvars[i][1],
+                    ),
+                )
+            )
             self.labels[i][0].grid(row=i, column=0, padx=10)
             self.labels[i][1].grid(row=i, column=1, padx=10)
 
-        # self.textvar = StringVar()
-        # self.guess = Label(self.root, textvariable=self.textvar, font=("TkDefaultFont", 44))
-        # self.guess.grid(row=2, columnspan=5)
-        
         self._throttle_flag = False
         self.setup()
         self.root.mainloop()
@@ -100,7 +98,7 @@ class Paint(object):
         self.root.update_idletasks()
 
         self.image_handler = ImageHandler(self.root, self.c)
-        self.neuralnet_handler = NeuralNetHandler()
+        self.neuralnet_handler = NeuralNetHandler(self.model_path)
         self._clear_prediction_labels()
 
     def use_pen(self):
@@ -127,7 +125,7 @@ class Paint(object):
         self.line_width = self.choose_size_button.get()
         # Use white for drawing on PIL image, black for erasing
         paint_color = "black" if self.eraser_on else "white"
-        
+
         if self.old_x and self.old_y:
             # Draw on the screen canvas
             self.c.create_line(
@@ -142,7 +140,9 @@ class Paint(object):
                 splinesteps=36,
             )
             # Draw on the in-memory PIL image
-            self.image_handler.add_line(self.old_x, self.old_y, event.x, event.y, self.line_width, paint_color)
+            self.image_handler.add_line(
+                self.old_x, self.old_y, event.x, event.y, self.line_width, paint_color
+            )
 
         self.old_x = event.x
         self.old_y = event.y
