@@ -1,16 +1,31 @@
 # Credits to nikhilkumarsingh
 # https://gist.github.com/nikhilkumarsingh/85501ee2c3d8c0cfa9d1a27be5781f06
 
-from tkinter import *
+from tkinter import (
+    Tk,
+    Canvas,
+    Frame,
+    Scale,
+    Button,
+    Label,
+    StringVar,
+    HORIZONTAL,
+    RAISED,
+    SUNKEN,
+    ROUND,
+    TRUE,
+)
 
 from gui.imagehandler import ImageHandler
 from gui.neuralnethandler import NeuralNetHandler
+from gui.labels import get_label_mapping
 
 
 class Paint(object):
     DEFAULT_PEN_SIZE = 50.0
     DEFAULT_COLOR = "white"
     DEFAULT_BACKGROUND = "black"
+    TOP_N_PREDICTIONS = 10
 
     def __init__(self, model_path):
         self.model_path = model_path
@@ -51,7 +66,6 @@ class Paint(object):
         )
         self.c.grid(row=1, rowspan=10, columnspan=5)
 
-        # Create a fixed-size frame for the prediction labels
         prediction_frame = Frame(self.root, width=250, height=600)
         prediction_frame.grid(row=1, column=5, rowspan=10, columnspan=2, padx=10)
         prediction_frame.grid_propagate(False)
@@ -59,7 +73,7 @@ class Paint(object):
         self.labels = []
         self.textvars = []
 
-        for i in range(10):
+        for i in range(self.TOP_N_PREDICTIONS):
             self.textvars.append([StringVar(), StringVar()])
             self.labels.append(
                 (
@@ -94,11 +108,13 @@ class Paint(object):
         self.c.bind("<B1-Motion>", self.paint)
         self.c.bind("<ButtonRelease-1>", self.reset)
 
-        # Ensure canvas is fully rendered to get correct size for PIL image
         self.root.update_idletasks()
 
         self.image_handler = ImageHandler(self.root, self.c)
         self.neuralnet_handler = NeuralNetHandler(self.model_path)
+
+        self.label_mapping = get_label_mapping(self.neuralnet_handler.output_size)
+
         self._clear_prediction_labels()
 
     def use_pen(self):
@@ -123,11 +139,9 @@ class Paint(object):
 
     def paint(self, event):
         self.line_width = self.choose_size_button.get()
-        # Use white for drawing on PIL image, black for erasing
         paint_color = "black" if self.eraser_on else "white"
 
         if self.old_x and self.old_y:
-            # Draw on the screen canvas
             self.c.create_line(
                 self.old_x,
                 self.old_y,
@@ -139,7 +153,6 @@ class Paint(object):
                 smooth=TRUE,
                 splinesteps=36,
             )
-            # Draw on the in-memory PIL image
             self.image_handler.add_line(
                 self.old_x, self.old_y, event.x, event.y, self.line_width, paint_color
             )
@@ -147,7 +160,6 @@ class Paint(object):
         self.old_x = event.x
         self.old_y = event.y
 
-        # Throttle the prediction
         if not self._throttle_flag:
             self._throttle_flag = True
             self._trigger_prediction()
@@ -160,25 +172,34 @@ class Paint(object):
         self.image_handler.update()
         prediction = self.neuralnet_handler.predict(self.image_handler.image)
 
-        prediction_textvars = [[i, p] for i, p in zip(range(10), prediction[0])]
+        prediction_indexed = list(enumerate(prediction[0]))
 
-        count = 0
-        # Sort by probability and update labels
-        for item in reversed(sorted(prediction_textvars, key=lambda item: item[1])):
-            self.textvars[count][0].set(item[0])
-            self.textvars[count][1].set("{:,.2%}".format(item[1]))
-            # Dim non-top predictions
-            color = "#000" if count == 0 else "#888"
-            self.labels[count][0].config(fg=color)
-            self.labels[count][1].config(fg=color)
-            count += 1
+        sorted_predictions = sorted(
+            prediction_indexed, key=lambda item: item[1], reverse=True
+        )
+
+        for i in range(self.TOP_N_PREDICTIONS):
+            if i < len(sorted_predictions):
+                idx, prob = sorted_predictions[i]
+
+                label_str = self.label_mapping.get(idx, str(idx))
+
+                self.textvars[i][0].set(label_str)
+                self.textvars[i][1].set("{:,.2%}".format(prob))
+
+                color = "#000" if i == 0 else "#888"
+                self.labels[i][0].config(fg=color)
+                self.labels[i][1].config(fg=color)
+            else:
+                self.textvars[i][0].set("")
+                self.textvars[i][1].set("")
 
     def _clear_prediction_labels(self):
-        for i in range(10):
+        for i in range(self.TOP_N_PREDICTIONS):
             self.textvars[i][0].set("")
             self.textvars[i][1].set("")
 
     def reset(self, event):
         self.old_x, self.old_y = None, None
-        # Trigger one final prediction on mouse release
         self._trigger_prediction()
+
